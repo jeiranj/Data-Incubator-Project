@@ -17,7 +17,7 @@ desired_keys = ['Title','Date','Lat','Lon','MGRS','Type','Category','Tracking nu
 class UrlRequester:
     def __init__(self):
         self.last_query_seconds = -1
-        
+
         
     def rate_limit(self):
         time_since_last_query_seconds = time.time() - self.last_query_seconds
@@ -58,6 +58,9 @@ class UrlRequester:
         soup = BeautifulSoup(raw_page)
         #print soup.prettify()
     
+<<<<<<< HEAD
+=======
+>>>>>>> 20d5a91ce3f63a1a12da763eaa65a0d9bfbc702c
         parent_table = soup.find('table',attrs={'class':'metadata'})
         title = str(soup.find('h1',attrs={'class':'entry-title'}).text.encode('utf8', 'replace'))
         date = str(soup.find('div',attrs={'style':'clear: both;'}).text)
@@ -68,6 +71,7 @@ class UrlRequester:
         log = re.sub("\nJavascript required for full view\nLimited script-free view:\n(\s+)",'', log)
     
         #Table keys:
+<<<<<<< HEAD
         outcome = ['Enemy detained','Total casualties','Friendly wounded','Friendly killed',
                    'Enemy wounded','Enemy killed','Civilian wounded','Civilian killed',
                    'Host nation wounded','Host nation killed']
@@ -75,6 +79,7 @@ class UrlRequester:
         keys = [str(tmp.text) for tmp in table_th]
         keys.extend(outcome)
         
+>>>>>>> 20d5a91ce3f63a1a12da763eaa65a0d9bfbc702c
         #Table values:
         table_td = parent_table.find_all('td')
         values = [str(tmp.text) for tmp in table_td]
@@ -83,6 +88,7 @@ class UrlRequester:
         index_tmp = find(values, outcome)
 
         values_tmp = ['0'] * len(outcome)
+<<<<<<< HEAD
         index_keys = []
         for i in range(len(index_tmp)):
             if index_tmp[i]:
@@ -123,6 +129,9 @@ class UrlRequester:
         return values
         
         
+
+
+>>>>>>> 20d5a91ce3f63a1a12da763eaa65a0d9bfbc702c
     def mgrs_to_latLon(self,mgrs_data):   
         m = mgrs.MGRS()
         mgrs_data = mgrs_data.replace(" ", "")
@@ -132,6 +141,7 @@ class UrlRequester:
 
 
 def main():
+<<<<<<< HEAD
     last_page=7837#39184
     url_requester = UrlRequester()    
     page1 = 1
