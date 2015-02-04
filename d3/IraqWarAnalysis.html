@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Analysis of the Iraq War</title>
+<link rel="stylesheet" href="d3.slider.css" />
+<!-- <link href="css/bootstrap.min.css" rel="stylesheet" media="screen"> -->
+</head>
+
+<style>
+body {
+    font-family: arial,sans-serif;
+}
+.boundary {
+    fill: #fee8c8;
+    stroke: #A8A8A8;
+    stroke-width: 1px;
+}
+.tooltip {
+    position: absolute;
+    width: 150px;
+    height: 60px;
+    font: 15px rockwell;        
+    background: lightgrey;   
+    pointer-events: none;
+}
+
+.both {
+    width: 100%;
+    height = auto;
+    margin-top: 0px; 
+    margin-left: 0px;
+    margin-right: 0px;
+    border-bottom: 3px solid #4588ba;
+    margin-bottom:10px;
+}
+
+.left {
+    width: 57%;
+    height = auto;
+    margin-top: 10px; 
+    margin-left: 1px;
+    margin-right: 1px;
+    float: left;
+}
+.right {
+    width: 40%;
+    height = auto;
+    margin-top: 10px; 
+    margin-left: 1px;
+    margin-right: 1px;
+    float: right;
+/*     overflow:hidden; */
+}
+
+.right img {
+  height: 100%;
+  width: 100%;
+}
+
+.slider {
+    margin-left: 12%;
+    margin-right: 10%;
+}
+
+.clear-both {
+     clear: both;
+}
+
+.half-left {
+    width: 48%;
+    height = auto;
+    margin-top: 10px; 
+    margin-left: 10px;
+    margin-right: 10px;
+    float: left;
+}
+.half-left img {
+  height: 100%;
+  width: 100%;
+}
+.half-right {
+    width: 48%;
+    height = auto;
+    margin-top: 10px; 
+    margin-left: 10px;
+    margin-right: 10px;
+    float: right;
+}
+.half-right img {
+  height: 100%;
+  width: 100%;
+}
+</style>
+
+
+<body>
+
+
+<div class="both" id="both">
+<!-- The left side of the page that contains the map -->
+<div class="left" id="left">
+<br><br><br><br>
+</div> 
+
+<!-- The right side of the page that contains the slider and graphs -->
+<div class="right" id="right">
+<h3><center>(year, month, day): <span id="slidertext"></span></center> </h3>
+<br>
+<div class="slider" id="slider"></div>
+<br><br>
+<div id="images">
+<img src="images/EventCount.png" alt="EventCount">
+<img src="images/ACF.png" alt="Autocorrelation">
+</div> 
+<br><br><br><br><br>
+</div> <!-- div right -->
+
+<div class="clear-both"></div>
+</div> <!-- div both -->
+<div class="both" id="both">
+<h2><center> Temporal Trends</center></h2>
+<div class="half-left" id="left1">
+<br>
+<img src="images/DW_trend.png" alt="Day of week trend">
+<br>
+</div> 
+<div class="half-right" id="right1">
+<br>
+<img src="images/month_trend.png" alt="Monthly trend">
+<br>
+</div> 
+<br>
+<div class="clear-both"></div>
+<br><br><br><br><br>
+</div> <!-- div both -->
+
+
+
+<div class="both" id="both">
+<h2><center> Non-negative Matrix Factorization </center></h2>
+<h4><center> Unlike PCA where principal components are limited by the orthogonality condition, this approach provides more physical and meaningful results. </center> </h4>
+
+<div class="half-left" id="left1">
+<img src="images/NMF_spatial_factor0.png" alt="first spatial">
+<img src="images/NMF_spatial_factor1.png" alt="second spatial">
+<img src="images/NMF_spatial_factor2.png" alt="third spatial">
+</div> 
+<div class="half-right" id="right1">
+<br>
+<img src="images/NMF_temporals0.png" alt="first temporal">
+<br><br><br><br><br><br><br><br><br><br>
+<img src="images/NMF_temporals1.png" alt="second temporal">
+<br><br><br><br><br><br><br><br><br>
+<img src="images/NMF_temporals2.png" alt="third temporal">
+<br>
+</div>
+<br>
+<div class="clear-both"></div>
+</div> <!-- div both -->
+
+
+<div class="both" id="both">
+<h2><center> Adaptive Kernel Regression </center></h2>
+<h4><center> This is a non-parametric approach which is generalize to adapt to local characteristics of the data.<br>
+The procedure robustly captures the underlying multidimensional signals even when noise is significant and part of the data is missing. <br>
+The framework does not rely upon strong assumptions about noise or signal models. </center> </h4>
+<div class="half-left" id="left1">
+<br>
+<img src="images/smoothed.png" alt="first spatial">
+</div> 
+<div class="half-right" id="right1">
+<br>
+<img src="images/changePoints.png" alt="first temporal">
+</div>
+<br>
+<div class="clear-both"></div>
+</div> <!-- div both -->
+
+
+
+</body>
+
+<script src="d3.v3.min.js"></script>
+<script src="topojson.v1.min.js"></script>
+<script src="jquery.js"></script>
+<script src="d3.slider.js"></script>
+
+
+<script>
+// reload page on resizes
+window.onresize = function(){ location.reload(); }
+var num = 1;
+var margin = {top: 20, right: 5, bottom: 10, left: 5};
+var width = document.getElementById("left").offsetWidth;
+var height = window.innerHeight;
+var projection = d3.geo.mercator()
+    .center([37, 37.4])
+    .scale(4.2*width)
+    .translate([0, 0])
+    .precision(.1);
+
+var path = d3.geo.path()
+    .projection(projection);
+ 
+var svg = d3.select("#left").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");    
+    
+var tooltip = d3.select("#left").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 10);
+
+function showImages() {
+  var data = [{id: 1, text: 'sample text 1', imgsrc: 'images/EventCount1.png'}];
+  var gallery = d3.select("#right").append('div');
+  var container = gallery.selectAll('.container')
+    .data(data, function(d) { return d.id; });
+
+  container.enter().append('div')
+    .attr('class', 'container')
+  container.exit().remove();
+  
+  container.selectAll('.text')
+    .data(function(d) { return [d]; })
+    .enter().append('p')
+    .attr('class', 'text')
+    .text(function(d) { console.log(d); return d.text; });
+  
+  container.selectAll('.picture')
+    .data(function(d) { return [d]; })
+    .enter().append('img')
+    .attr('class', 'picture')
+    .attr('src', function(d) { return d.imgsrc; });
+}
+ 
+
+// Used as a callback function which draws the map of iraq. irq is basically the contents
+// of districts-geo.json
+function drawMap(error, irq) {
+  svg.selectAll(".districts")
+    .data(topojson.feature(irq, irq.objects.districts).features)
+    .enter().append("path")
+    .attr("class", function(d) { return "district " + d.id; })
+    .attr("d", path)
+    .attr("class", "boundary")
+    .style("fill", function(d) { return colorScale(events_fraction_dict[d.id]);}) 
+    .on("mouseover", function(d) {
+        tooltip.transition()
+        .duration(200)
+        .style("opacity", .8);
+        tooltip.html(d["id"] + "<br/> Count " + events_dict[d.id] + "<br/> Fraction " + events_fraction_dict[d.id].toFixed(2) )
+        .style("left", (d3.event.pageX + 5) + "px")
+        .style("top", (d3.event.pageY - 28) + "px"); })
+    .on("mouseout", function(d) {
+        tooltip.transition()
+        .duration(1000)
+        .style("opacity", 0); });
+
+  //MARK SOME CITIES
+  d3.csv("cities.csv", function(error, cities) {
+      cities.forEach(function(d) {
+        d.lat = +d.lat;
+        d.lon = +d.lon; });
+      var elemEnter = svg.selectAll(".g")
+      .data(cities)
+      .enter().append("g")
+      .attr("transform", function(d){return "translate(" + projection([d.lon, d.lat]) + ")"});
+      var circle = elemEnter.append("circle")
+      .attr("r", width*0.004 )
+      .attr("stroke","black")
+      .attr("fill", "black");
+      elemEnter.append("text")
+      .attr("font-size", width*0.022+'px')
+      .attr("dx", width*0.007) 
+      .attr("y", function(d){ if (d.city=='Ramadi') {return -0.014*width} if (d.city=='Mosul') {return -0.014*width} if (d.city=='Fallujah') {return 0.028*width} else {return 0.014*width} }) 
+      .attr("x", function(d){ if (d.city=='Ramadi') {return -0.07*width} if (d.city=='Fallujah') {return -0.06*width} else {return 0} }) 
+      .text(function(d){return d.city}); 
+      }); 
+}
+   
+function drawColorBar(events_fraction) {
+    colormap = d3.range(0, d3.max(events_fraction), d3.max(events_fraction)/20);
+    // contains the indices of color map to label
+    label_indices = d3.range(0,21,4);
+    // Create the actual color scale from the color map above
+    colorScale = d3.scale.linear()
+        .domain([d3.min(colormap), d3.max(colormap)])  
+        .range(["#fee8c8","#b60f2e"]);
+    
+    // The height of the color bar
+    local_height = 3*height/4;
+    num_rectangles = colormap.length+1;
+    rectangle_height = local_height/num_rectangles;
+
+    // Here we draw the rectangles, each with a separate color. The colors of rectangles are
+    // fetched from colorScale
+    var rects = svg.selectAll(".rect")
+        .data(colormap)
+        .enter().append("rect")
+        .attr({
+            width: width*0.03,
+            height: rectangle_height,
+            y: function(d,i) {return -i*rectangle_height+1*local_height - rectangle_height;},
+            x: 0.07*width,
+            fill: function(d,i) {return colorScale(d);}
+        });
+    svg.selectAll(".texts")
+        .data(colormap)
+        .enter().append("text")
+        .attr("class","texts")
+        .attr("dy", ".2em")
+        .attr("x", width*0.04)
+        .attr("font-size", width*0.02+'px')
+        .attr("font", 'Rockwell')
+        .attr("y", function(d,i) {return -i*rectangle_height+1*local_height - rectangle_height/2;})
+        .attr("text-anchor","middle")
+        .style("fill", "#5d5d5d")
+        .style("opacity", function(d,i) {return (label_indices.indexOf(i) > -1) ? 1 : 0 })
+        .text(function(d) {return ''+(d.toFixed(3));}); 
+}
+
+
+d3.text("aggIrq.csv", function(text) {
+    // Each row in all_events corresponds to one date which could have many events in each district
+    all_events = (d3.csv.parseRows(text));
+    // The first row in all_events is the header. Get the district names from header
+    districts = all_events[0].slice(3);
+    
+    // all_dates is an array which contains the date of all events including year, month and day 
+    all_dates = all_events.map(function(d) {return d[0].concat(", ", d[1], ", ", d[2]);});
+    // first_day_events contains the number of events per district in the first day 
+    first_day_events = d3.values(all_events[1]).slice(3);
+    // sum of all events in the first day
+    sum_first_day_events = d3.sum(first_day_events); 
+    // contains the fraction of first day events per district (instead of absolute number of events)
+    first_day_events_fraction = first_day_events.map(function(num) {return num/sum_first_day_events;});
+    
+    events_fraction_dict = {};
+    events_dict = {};
+    for (var i = 0; i < districts.length; i++) {
+      events_fraction_dict[districts[i]] = first_day_events_fraction[i];
+    };
+    for (var i = 0; i < districts.length; i++) {
+      events_dict[districts[i]] = first_day_events[i];
+    };
+    
+    //DRAW COLORBAR before drawing the map. because map needs colorCcale 
+    drawColorBar(first_day_events_fraction)
+
+    //LOAD MAP OF IRAQ WITH DISTRICTS
+    d3.json("districts-geo.json", drawMap)
+
+ 
+
+
+    // SLIDER
+    // Write the first date
+    d3.select('#slidertext').text(all_dates[1]);
+    // On sliding need to redraw both map and color bar
+    d3.select('#slider').call(d3.slider().axis(true).min(2004).max(2010).step((2010-2004)/(all_dates.length-1))
+        .on("slide", function(evt, value) {
+          svg.selectAll("*").remove();
+          date_index = Math.floor((value-2004)*(all_dates.length-1)/(2010-2004)); 
+          d3.select('#slidertext').text(all_dates[date_index]);
+
+          events = d3.values(all_events[date_index]).slice(3);
+          sum_events = d3.sum(events); 
+          events_fraction = events.map(function(num) {return num/sum_events;});
+          
+          events_fraction_dict = {};
+          events_dict = {};
+          for (var i = 0; i < districts.length; i++) {
+            events_fraction_dict[districts[i]] = events_fraction[i];
+          };
+          for (var i = 0; i < districts.length; i++) {
+            events_dict[districts[i]] = events[i];
+          };
+           // ReDRAW COLORBAR before drawing the map. because map needs colorCcale 
+          drawColorBar(events_fraction)
+          // ReLOAD MAP OF IRAQ WITH DISTRICTS
+          d3.json("districts-geo.json", drawMap)
+
+          // Show images
+          //showImages()
+  }));
+});
+
+</script>
