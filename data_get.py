@@ -5,14 +5,15 @@ import csv
 import re
 import time
 #sys.modules[__name__].__dict__.clear()
+
 RATE_LIMIT_PER_SECONDS = 1.2
 desired_keys = ['Title','Date','Lat','Lon','MGRS','Type','Category','Tracking number',
                 'Region','Reporting unit','Unit name','Type of unit','Attack on',
                 'Originator group', 'Updated by group','CCIR','Sigact','Affiliation',
-                'Dcolor','Classification','Enemy detained',
-                'Total casualties','Friendly wounded','Friendly killed',
-                'Enemy wounded','Enemy killed','Civilian wounded','Civilian killed',
-                'Host nation wounded','Host nation killed','Log']
+                'Dcolor','Classification','Enemy detained','Total casualties',
+                'Friendly wounded','Friendly killed','Enemy wounded','Enemy killed',
+                'Civilian wounded','Civilian killed','Host nation wounded',
+                'Host nation killed','Log']
         
 class UrlRequester:
     def __init__(self):
@@ -37,7 +38,7 @@ class UrlRequester:
                 response = urllib2.urlopen(url)
                 results = response.read()
                 return results
-            except urllib2.HTTPError:
+            except (urllib2.HTTPError, urllib2.URLError):
                 print "Openning URL: " + url + " had an http error. Retrying...\n"
                 time.sleep(20)
                 continue
@@ -66,7 +67,7 @@ class UrlRequester:
         log = soup.find('noscript').text
         log = str(log.encode('utf8', 'replace'))
         log = re.sub("\nJavascript required for full view\nLimited script-free view:\n(\s+)",'', log)
-    
+        
         #Table keys:
         outcome = ['Enemy detained','Total casualties','Friendly wounded','Friendly killed',
                    'Enemy wounded','Enemy killed','Civilian wounded','Civilian killed',
@@ -101,7 +102,7 @@ class UrlRequester:
             lat = ''
             lon = ''
             print 'MGRS problem at log'+log_id
-        except ValueError:
+        except (ValueError,KeyError):
             lat = ''
             lon = ''
             print 'Missing MGRS at log'+log_id
@@ -122,9 +123,6 @@ class UrlRequester:
         del values_tmp, index_tmp, index_keys, table_th, table_td, key
         return values
         
-        
-
-
     def mgrs_to_latLon(self,mgrs_data):   
         m = mgrs.MGRS()
         mgrs_data = mgrs_data.replace(" ", "")
@@ -136,8 +134,8 @@ class UrlRequester:
 def main():
     last_page=7837#39184
     url_requester = UrlRequester()    
-    page1 = 1
-    with open('irq1.csv', 'w') as f_csv:
+    page1 = 3433
+    with open('irq1.csv', 'a') as f_csv:
         writer = csv.writer(f_csv, delimiter=',')    
         writer.writerow(desired_keys)
         for page in range(page1,last_page+1):
